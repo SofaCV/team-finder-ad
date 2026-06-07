@@ -71,14 +71,11 @@ class EditProfileForm(forms.ModelForm):
     def clean_github_url(self):
         url = self.cleaned_data.get("github_url", "")
         if url:
-            try:
-                return validate_github_url(url)
-            except forms.ValidationError:
-                raise
+            return validate_github_url(url)
         return url
 
 
-class CustomPasswordChangeForm(PasswordChangeForm):
+class PasswordChangeForm(PasswordChangeForm):
     old_password = forms.CharField(
         widget=forms.PasswordInput,
         label="Текущий пароль",

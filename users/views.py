@@ -1,30 +1,22 @@
 import json
+from http import HTTPStatus
 
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
+from users.constants import SKILLS_AUTOCOMPLETE_LIMIT
 from users.forms import (
-    CustomPasswordChangeForm,
     EditProfileForm,
     LoginForm,
+    PasswordChangeForm,
     RegistrationForm,
 )
 from users.models import Skill, User
-
-PAGE_SIZE = 12
-
-
-def _build_query_prefix(request, exclude=None):
-    params = []
-    for key, value in request.GET.items():
-        if key == "page" or key in (exclude or []):
-            continue
-        params.append(f"{key}={value}")
-    return "&".join(params) + ("&" if params else "")
+from users.service import paginate_queryset
 
 
 def register_view(request):
@@ -38,9 +30,10 @@ def register_view(request):
                 surname=form.cleaned_data["surname"],
             )
             login(request, user)
-            return redirect("/projects/list/")
+            return redirect(reverse("projects:project_list"))
     else:
         form = RegistrationForm()
+
     return render(request, "users/register.html", {"form": form})
 
 
@@ -49,27 +42,32 @@ def login_view(request):
         form = LoginForm(request.POST)
         if form.is_valid():
             login(request, form.user)
-            return redirect("/projects/list/")
+            return redirect(reverse("projects:project_list"))
     else:
         form = LoginForm()
+
     return render(request, "users/login.html", {"form": form})
 
 
 def logout_view(request):
     logout(request)
-    return redirect("/projects/list/")
+    return redirect(reverse("projects:project_list"))
 
 
 def participants_list_view(request):
     participants = User.objects.filter(is_active=True).order_by("-id")
     active_skill = request.GET.get("skill", "")
+
     if active_skill:
         participants = participants.filter(skills__name=active_skill).distinct()
+
     all_skills = (
         Skill.objects.order_by("name").values_list("name", flat=True).distinct()
     )
-    paginator = Paginator(participants, PAGE_SIZE)
-    page_obj = paginator.get_page(request.GET.get("page"))
+
+    # Используем общую функцию пагинации
+    page_obj, query_prefix = paginate_queryset(participants, request)
+
     return render(
         request,
         "users/participants.html",
@@ -78,7 +76,7 @@ def participants_list_view(request):
             "page_obj": page_obj,
             "all_skills": all_skills,
             "active_skill": active_skill,
-            "query_prefix": _build_query_prefix(request),
+            "query_prefix": query_prefix,
         },
     )
 
@@ -91,12 +89,15 @@ def user_detail_view(request, user_id):
 @login_required
 def edit_profile_view(request):
     if request.method == "POST":
-        form = EditProfileForm(request.POST, request.FILES, instance=request.user)
+        form = EditProfileForm(request.POST, request.FILES,
+                               instance=request.user)
         if form.is_valid():
             form.save()
-            return redirect(f"/users/{request.user.id}/")
+            return redirect(reverse("users:user_detail",
+                                    args=[request.user.id]))
     else:
         form = EditProfileForm(instance=request.user)
+
     return render(
         request,
         "users/edit_profile.html",
@@ -107,19 +108,23 @@ def edit_profile_view(request):
 @login_required
 def change_password_view(request):
     if request.method == "POST":
-        form = CustomPasswordChangeForm(request.user, request.POST)
+        form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
             form.save()
-            return redirect(f"/users/{request.user.id}/")
+            return redirect(reverse("users:user_detail",
+                                    args=[request.user.id]))
     else:
-        form = CustomPasswordChangeForm(request.user)
+        form = PasswordChangeForm(request.user)
+
     return render(request, "users/change_password.html", {"form": form})
 
 
 @require_GET
 def skills_autocomplete_view(request):
     query = request.GET.get("q", "").strip()
-    skills = Skill.objects.filter(name__istartswith=query).order_by("name")[:10]
+    skills = Skill.objects.filter(name__istartswith=query).order_by("name")[
+        :SKILLS_AUTOCOMPLETE_LIMIT
+    ]
     data = [{"id": skill.id, "name": skill.name} for skill in skills]
     return JsonResponse(data, safe=False)
 
@@ -128,8 +133,11 @@ def skills_autocomplete_view(request):
 @require_POST
 def skill_add_view(request, user_id):
     user = get_object_or_404(User, pk=user_id)
+
     if request.user.id != user.id:
-        return JsonResponse({"error": "forbidden"}, status=403)
+        return JsonResponse({"error": "forbidden"},
+                            status=HTTPStatus.FORBIDDEN)
+
     try:
         body = json.loads(request.body)
     except json.JSONDecodeError:
@@ -147,7 +155,8 @@ def skill_add_view(request, user_id):
     elif name:
         skill, created = Skill.objects.get_or_create(name=name)
     else:
-        return JsonResponse({"error": "invalid"}, status=400)
+        return JsonResponse({"error": "invalid"},
+                            status=HTTPStatus.BAD_REQUEST)
 
     if not user.skills.filter(pk=skill.pk).exists():
         user.skills.add(skill)
@@ -168,9 +177,14 @@ def skill_add_view(request, user_id):
 @require_POST
 def skill_remove_view(request, user_id, skill_id):
     user = get_object_or_404(User, pk=user_id)
+
     if request.user.id != user.id:
-        return JsonResponse({"error": "forbidden"}, status=403)
+        return JsonResponse({"error": "forbidden"},
+                            status=HTTPStatus.FORBIDDEN)
+
     skill = get_object_or_404(Skill, pk=skill_id)
+
     if user.skills.filter(pk=skill.pk).exists():
         user.skills.remove(skill)
+
     return JsonResponse({"status": "ok"})
