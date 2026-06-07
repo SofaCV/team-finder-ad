@@ -27,6 +27,4 @@ class ProjectForm(forms.ModelForm):
 
     def clean_github_url(self):
         url = self.cleaned_data.get("github_url", "")
-        if url:
-            return validate_github_url(url)
-        return url
+        return validate_github_url(url)
