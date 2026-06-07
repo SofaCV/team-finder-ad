@@ -117,3 +117,7 @@ python manage.py test
 | POST | `/projects/<id>/complete/` | Завершить проект |
 | POST | `/projects/<id>/toggle-participate/` | Участвовать/отказаться |
 | POST | `/projects/<id>/toggle-favorite/` | Добавить/убрать из избранного |
+
+## Проект выполняла Софья. 
+## Моя почта: sofiadelf0608@rambler.ru
+## Ссылка на мой GitHub: https://github.com/SofaCV
