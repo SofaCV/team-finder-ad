@@ -3,10 +3,11 @@ from django.shortcuts import redirect
 from django.urls import include, path
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import reverse_lazy
 
 
 def root_redirect(request):
-    return redirect("/projects/list/")
+    return redirect(reverse_lazy("projects:project_list"))
 
 
 urlpatterns = [

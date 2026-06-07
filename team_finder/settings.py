@@ -3,18 +3,20 @@ from pathlib import Path
 
 from decouple import config
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+from django.urls import reverse_lazy
 
-# TODO: Создать и заполнить .env, ориентируясь на .env_example
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("DJANGO_SECRET_KEY")
 
 DEBUG = config("DJANGO_DEBUG", default=False, cast=bool)
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1"]
-
-
-# Application definition
+ALLOWED_HOSTS_DEFAULT = "localhost,127.0.0.1"
+ALLOWED_HOSTS = config(
+    "DJANGO_ALLOWED_HOSTS",
+    default=ALLOWED_HOSTS_DEFAULT,
+    cast=lambda v: [host.strip() for host in v.split(",")],
+)
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -29,7 +31,7 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = "users.User"
 
-LOGIN_URL = "/users/login/"
+LOGIN_URL = reverse_lazy("users:login")
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -43,10 +45,20 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = "team_finder.urls"
 
+TASK_VERSION = config("TASK_VERSION", default="1")
+
+TEMPLATES_DIRS = {
+    "1": BASE_DIR / "templates_var1",
+    "2": BASE_DIR / "templates_var2",
+    "3": BASE_DIR / "templates_var3",
+}
+
+TEMPLATES_DIR = TEMPLATES_DIRS.get(TASK_VERSION, TEMPLATES_DIRS["1"])
+
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / f"templates_var{config('TASK_VERSION', default='1')}"],
+        "DIRS": [TEMPLATES_DIR],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -123,8 +135,8 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
-# Media files
 
+# Media files
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 
