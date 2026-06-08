@@ -38,6 +38,7 @@ cp .env_example .env
 | `DJANGO_DEBUG` | `True` для разработки |
 | `POSTGRES_*` | Параметры подключения к PostgreSQL |
 | `USE_SQLITE` | `True` — SQLite вместо PostgreSQL (только для локальной разработки без Docker) |
+| `DJANGO_ALLOWED_HOSTS` | Список разрешенных хостов/доменов через запятую (например, localhost,127.0.0.1,example.com)
 
 > **Для проверки по заданию** используйте PostgreSQL: запустите Docker (шаг 3) и **не указывайте** `USE_SQLITE` в `.env`.
 
