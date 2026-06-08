@@ -15,6 +15,3 @@ PROJECT_STATUS_CHOICES = [
 
 PAGE_SIZE = 12
 
-# HTTP статусы (добавим свои константы для удобства)
-HTTP_403_FORBIDDEN = 403
-HTTP_400_BAD_REQUEST = 400

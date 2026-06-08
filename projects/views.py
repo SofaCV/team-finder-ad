@@ -63,12 +63,10 @@ def project_toggle_participate_view(request, project_id):
     if request.user.id == project.owner_id:
         return JsonResponse({"status": "error"}, status=HTTPStatus.BAD_REQUEST)
 
-    if project.participants.filter(pk=request.user.pk).exists():
+    if is_participant := project.participants.filter(pk=request.user.pk).exists():
         project.participants.remove(request.user)
-        is_participant = False
     else:
         project.participants.add(request.user)
-        is_participant = True
 
     return JsonResponse({"status": "ok", "participant": is_participant})
 
@@ -78,7 +76,6 @@ def project_toggle_participate_view(request, project_id):
 def project_toggle_favorite_view(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
-    # Используем моржовый оператор для сокращения кода
     if favorited := not request.user.favorites.filter(pk=project.pk).exists():
         request.user.favorites.add(project)
     else:
@@ -100,16 +97,14 @@ def favorite_projects_view(request):
 
 @login_required
 def create_project_view(request):
-    if request.method == "POST":
-        form = ProjectForm(request.POST)
-        if form.is_valid():
-            project = form.save(commit=False)
-            project.owner = request.user
-            project.save()
-            project.participants.add(request.user)
-            return redirect(reverse("project_detail", args=[project.id]))
-    else:
-        form = ProjectForm()
+    form = ProjectForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        project = form.save(commit=False)
+        project.owner = request.user
+        project.save()
+        project.participants.add(request.user)
+        return redirect(reverse("projects:project_detail", args=[project.id]))
 
     return render(
         request,
@@ -123,15 +118,13 @@ def edit_project_view(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
     if request.user.id != project.owner_id and not request.user.is_staff:
-        return redirect(reverse("project_detail", args=[project.id]))
+        return redirect(reverse("projects:project_detail", args=[project.id]))
 
-    if request.method == "POST":
-        form = ProjectForm(request.POST, instance=project)
-        if form.is_valid():
-            form.save()
-            return redirect(reverse("project_detail", args=[project.id]))
-    else:
-        form = ProjectForm(instance=project)
+    form = ProjectForm(request.POST or None, instance=project)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect(reverse("projects:project_detail", args=[project.id]))
 
     return render(
         request,
