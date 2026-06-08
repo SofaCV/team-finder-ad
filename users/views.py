@@ -8,7 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_GET, require_POST
 
-from users.constants import SKILLS_AUTOCOMPLETE_LIMIT
+from users.constants import SKILLS_AUTOCOMPLETE_LIMIT, USERS_PAGE_SIZE
 from users.forms import (
     EditProfileForm,
     LoginForm,
@@ -17,13 +17,12 @@ from users.forms import (
 )
 from users.models import Skill, User
 from core.service import paginate_queryset
-from users.constants import USERS_PAGE_SIZE
 
 
 def register_view(request):
     form = RegistrationForm(request.POST or None)
 
-    if request.method == "POST" and form.is_valid():
+    if form.is_valid():
         user = User.objects.create_user(
             email=form.cleaned_data["email"],
             password=form.cleaned_data["password"],
@@ -39,7 +38,7 @@ def register_view(request):
 def login_view(request):
     form = LoginForm(request.POST or None)
 
-    if request.method == "POST" and form.is_valid():
+    if form.is_valid():
         login(request, form.user)
         return redirect(reverse("projects:project_list"))
 
@@ -90,7 +89,7 @@ def edit_profile_view(request):
         request.POST or None, request.FILES or None, instance=request.user
     )
 
-    if request.method == "POST" and form.is_valid():
+    if form.is_valid():
         form.save()
         return redirect(reverse("users:user_detail", args=[request.user.id]))
 
@@ -105,7 +104,7 @@ def edit_profile_view(request):
 def change_password_view(request):
     form = PasswordChangeForm(request.user, request.POST or None)
 
-    if request.method == "POST" and form.is_valid():
+    if form.is_valid():
         form.save()
         return redirect(reverse("users:user_detail", args=[request.user.id]))
 

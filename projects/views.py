@@ -48,12 +48,13 @@ def project_complete_view(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
 
     if request.user.id != project.owner_id or project.status != PROJECT_STATUS_OPEN:
-        return JsonResponse({"status": "error"}, status=HTTPStatus.FORBIDDEN)
+        return JsonResponse({"status": "error"},
+                            status=HTTPStatus.FORBIDDEN)
 
     project.status = PROJECT_STATUS_CLOSED
     project.save(update_fields=["status"])
-    return JsonResponse({"status": "ok",
-                         "project_status": PROJECT_STATUS_CLOSED})
+    return JsonResponse({"status": "ok", "project_status":
+                         PROJECT_STATUS_CLOSED})
 
 
 @login_required
@@ -100,7 +101,7 @@ def favorite_projects_view(request):
 def create_project_view(request):
     form = ProjectForm(request.POST or None)
 
-    if request.method == "POST" and form.is_valid():
+    if form.is_valid():
         project = form.save(commit=False)
         project.owner = request.user
         project.save()
@@ -123,7 +124,7 @@ def edit_project_view(request, project_id):
 
     form = ProjectForm(request.POST or None, instance=project)
 
-    if request.method == "POST" and form.is_valid():
+    if form.is_valid():
         form.save()
         return redirect(reverse("projects:project_detail", args=[project.id]))
 
