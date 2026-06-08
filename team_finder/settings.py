@@ -3,8 +3,6 @@ from pathlib import Path
 
 from decouple import config
 
-from django.urls import reverse_lazy
-
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = config("DJANGO_SECRET_KEY")
@@ -31,7 +29,7 @@ INSTALLED_APPS = [
 
 AUTH_USER_MODEL = "users.User"
 
-LOGIN_URL = reverse_lazy("users:login")
+LOGIN_URL = "users:login"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -44,16 +42,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "team_finder.urls"
-
-TASK_VERSION = config("TASK_VERSION", default="1")
-
-TEMPLATES_DIRS = {
-    "1": BASE_DIR / "templates_var1",
-    "2": BASE_DIR / "templates_var2",
-    "3": BASE_DIR / "templates_var3",
-}
-
-TEMPLATES_DIR = TEMPLATES_DIRS.get(TASK_VERSION, TEMPLATES_DIRS["1"])
+TEMPLATES_DIR = BASE_DIR / "templates_var2"
 
 TEMPLATES = [
     {
@@ -71,10 +60,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "team_finder.wsgi.application"
-
-
-# Database
-# https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 if config("USE_SQLITE", default=False, cast=bool) or "test" in sys.argv:
     DATABASES = {
@@ -96,9 +81,6 @@ else:
     }
 
 
-# Password validation
-# https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = []
 if not DEBUG:
     AUTH_PASSWORD_VALIDATORS.extend(
@@ -118,9 +100,6 @@ if not DEBUG:
         ]
     )
 
-# Internationalization
-# https://docs.djangoproject.com/en/5.2/topics/i18n/
-
 LANGUAGE_CODE = "en-us"
 
 TIME_ZONE = "UTC"
@@ -129,18 +108,10 @@ USE_I18N = True
 
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# Media files
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
