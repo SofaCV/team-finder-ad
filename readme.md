@@ -37,7 +37,6 @@ cp .env_example .env
 | `DJANGO_SECRET_KEY` | Секретный ключ Django |
 | `DJANGO_DEBUG` | `True` для разработки |
 | `POSTGRES_*` | Параметры подключения к PostgreSQL |
-| `TASK_VERSION` | `2` — шаблоны из `templates_var2` |
 | `USE_SQLITE` | `True` — SQLite вместо PostgreSQL (только для локальной разработки без Docker) |
 
 > **Для проверки по заданию** используйте PostgreSQL: запустите Docker (шаг 3) и **не указывайте** `USE_SQLITE` в `.env`.
