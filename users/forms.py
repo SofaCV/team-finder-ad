@@ -1,15 +1,16 @@
 from django import forms
 from django.contrib.auth import authenticate
 from django.contrib.auth.forms import PasswordChangeForm
-from django.core.exceptions import ValidationError
 
+from users.constants import USER_NAME_MAX_LENGTH, USER_SURNAME_MAX_LENGTH
 from users.models import User
 from users.validators import validate_github_url, validate_phone
+from users.utils import normalize_phone
 
 
 class RegistrationForm(forms.Form):
-    name = forms.CharField(max_length=124, label="Имя")
-    surname = forms.CharField(max_length=124, label="Фамилия")
+    name = forms.CharField(max_length=USER_NAME_MAX_LENGTH, label="Имя")
+    surname = forms.CharField(max_length=USER_SURNAME_MAX_LENGTH, label="Фамилия")
     email = forms.EmailField(label="Email")
     password = forms.CharField(widget=forms.PasswordInput, label="Пароль")
 
@@ -54,10 +55,8 @@ class EditProfileForm(forms.ModelForm):
 
     def clean_phone(self):
         phone = self.cleaned_data["phone"]
-        try:
-            phone = validate_phone(phone)
-        except ValidationError as exc:
-            raise forms.ValidationError(exc.messages) from exc
+        phone = validate_phone(phone)
+        phone = normalize_phone(phone)
 
         qs = User.objects.filter(phone=phone)
         if self.instance.pk:

@@ -16,35 +16,32 @@ from users.forms import (
     RegistrationForm,
 )
 from users.models import Skill, User
-from users.service import paginate_queryset
+from core.service import paginate_queryset
+from users.constants import USERS_PAGE_SIZE
 
 
 def register_view(request):
-    if request.method == "POST":
-        form = RegistrationForm(request.POST)
-        if form.is_valid():
-            user = User.objects.create_user(
-                email=form.cleaned_data["email"],
-                password=form.cleaned_data["password"],
-                name=form.cleaned_data["name"],
-                surname=form.cleaned_data["surname"],
-            )
-            login(request, user)
-            return redirect(reverse("projects:project_list"))
-    else:
-        form = RegistrationForm()
+    form = RegistrationForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        user = User.objects.create_user(
+            email=form.cleaned_data["email"],
+            password=form.cleaned_data["password"],
+            name=form.cleaned_data["name"],
+            surname=form.cleaned_data["surname"],
+        )
+        login(request, user)
+        return redirect(reverse("projects:project_list"))
 
     return render(request, "users/register.html", {"form": form})
 
 
 def login_view(request):
-    if request.method == "POST":
-        form = LoginForm(request.POST)
-        if form.is_valid():
-            login(request, form.user)
-            return redirect(reverse("projects:project_list"))
-    else:
-        form = LoginForm()
+    form = LoginForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        login(request, form.user)
+        return redirect(reverse("projects:project_list"))
 
     return render(request, "users/login.html", {"form": form})
 
@@ -62,11 +59,12 @@ def participants_list_view(request):
         participants = participants.filter(skills__name=active_skill).distinct()
 
     all_skills = (
-        Skill.objects.order_by("name").values_list("name", flat=True).distinct()
+        Skill.objects.order_by("name").values_list("name",
+                                                   flat=True).distinct()
     )
 
-    # Используем общую функцию пагинации
-    page_obj, query_prefix = paginate_queryset(participants, request)
+    page_obj, query_prefix = paginate_queryset(participants, request,
+                                               USERS_PAGE_SIZE)
 
     return render(
         request,
@@ -88,15 +86,13 @@ def user_detail_view(request, user_id):
 
 @login_required
 def edit_profile_view(request):
-    if request.method == "POST":
-        form = EditProfileForm(request.POST, request.FILES,
-                               instance=request.user)
-        if form.is_valid():
-            form.save()
-            return redirect(reverse("users:user_detail",
-                                    args=[request.user.id]))
-    else:
-        form = EditProfileForm(instance=request.user)
+    form = EditProfileForm(
+        request.POST or None, request.FILES or None, instance=request.user
+    )
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect(reverse("users:user_detail", args=[request.user.id]))
 
     return render(
         request,
@@ -107,14 +103,11 @@ def edit_profile_view(request):
 
 @login_required
 def change_password_view(request):
-    if request.method == "POST":
-        form = PasswordChangeForm(request.user, request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect(reverse("users:user_detail",
-                                    args=[request.user.id]))
-    else:
-        form = PasswordChangeForm(request.user)
+    form = PasswordChangeForm(request.user, request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        return redirect(reverse("users:user_detail", args=[request.user.id]))
 
     return render(request, "users/change_password.html", {"form": form})
 

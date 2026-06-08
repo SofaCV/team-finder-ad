@@ -8,7 +8,8 @@ from django.views.decorators.http import require_POST
 
 from projects.forms import ProjectForm
 from projects.models import Project
-from projects.service import paginate_queryset
+from core.service import paginate_queryset
+from projects.constants import PAGE_SIZE
 from .constants import PROJECT_STATUS_CLOSED, PROJECT_STATUS_OPEN
 
 
@@ -19,7 +20,7 @@ def project_list_view(request):
         .order_by("-created_at")
     )
 
-    page_obj, query_prefix = paginate_queryset(projects, request)
+    page_obj, query_prefix = paginate_queryset(projects, request, PAGE_SIZE)
 
     return render(
         request,

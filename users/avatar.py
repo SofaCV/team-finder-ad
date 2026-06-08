@@ -42,8 +42,8 @@ def get_font(font_size: int):
     """
     Возвращает шрифт указанного размера.
     Перебирает список возможных путей к шрифтам.
+    Совместимо с Pillow 11.3.0
     """
-    # Пробуем загрузить шрифт из списка путей
     for font_path in FONT_PATHS:
         try:
             return ImageFont.truetype(font_path, font_size)
@@ -52,9 +52,11 @@ def get_font(font_size: int):
 
     warnings.warn(
         f"No TrueType fonts found. Using default font which may be too small. "
-        f"Requested size: {font_size}px"
+        f"Requested size: {font_size}px. Consider installing Arial or DejaVu Sans font."
     )
-    return ImageFont.load_default()
+    default_font = ImageFont.load_default()
+
+    return default_font
 
 
 def generate_avatar(
@@ -62,6 +64,7 @@ def generate_avatar(
 ) -> ContentFile:
     """
     Генерирует аватар на основе имени пользователя.
+    Совместимо с Pillow 11.3.0
 
     Args:
         name: Имя пользователя
@@ -88,4 +91,5 @@ def generate_avatar(
     image.save(buffer, format="PNG")
     buffer.seek(0)
 
-    return ContentFile(buffer.read(), name=f"avatar_{letter}_{size}x{size}.png")
+    return ContentFile(buffer.read(),
+                       name=f"avatar_{letter}_{size}x{size}.png")

@@ -1,19 +1,18 @@
-# projects/service.py
+# core/service.py
 from django.core.paginator import Paginator
-from .constants import PAGE_SIZE
 
 
-def build_query_prefix(request):
+def build_query_prefix(request, exclude=None):
     """Построение префикса для сохранения параметров запроса"""
     params = []
     for key, value in request.GET.items():
-        if key == "page":
+        if key == "page" or key in (exclude or []):
             continue
         params.append(f"{key}={value}")
     return "&".join(params) + ("&" if params else "")
 
 
-def paginate_queryset(queryset, request, page_size=PAGE_SIZE):
+def paginate_queryset(queryset, request, page_size):
     """Универсальная функция для пагинации"""
     paginator = Paginator(queryset, page_size)
     page_obj = paginator.get_page(request.GET.get("page"))
